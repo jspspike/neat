@@ -4,20 +4,20 @@ use rand::Rng;
 use super::innovation::InnovationCounter;
 use super::neat::NeatSettings;
 
-struct Node {
-    innovation: u16,
+pub(super) struct Node {
+    pub(super) innovation: u16,
 }
 
-struct Connection {
-    weight: f32,
-    enabled: bool,
+pub(super) struct Connection {
+    pub(super) weight: f32,
+    pub(super) enabled: bool,
 }
 
 pub(super) struct Genome {
-    inputs: u16,
-    outputs: u16,
-    nodes: Vec<Node>,
-    connections: IndexMap<(u16, u16), Connection>,
+    pub(super) inputs: u16,
+    pub(super) outputs: u16,
+    pub(super) nodes: Vec<Node>,
+    pub(super) connections: IndexMap<(u16, u16), Connection>,
 }
 
 impl Genome {
