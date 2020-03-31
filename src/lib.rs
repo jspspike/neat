@@ -1,4 +1,9 @@
 mod genome;
 mod innovation;
-pub mod neat;
+mod neat;
 mod network;
+
+pub use crate::neat::Neat;
+pub use crate::neat::NeatSettings;
+pub use network::Task;
+pub use network::Network;

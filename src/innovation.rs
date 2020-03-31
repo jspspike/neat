@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-pub(super) struct InnovationCounter {
+pub(crate) struct InnovationCounter {
     count: u16,
     connections: HashMap<(u16, u16), u16>,
 }
