@@ -1,29 +1,29 @@
 use indexmap::IndexMap;
 use rand::Rng;
-use std::marker::PhantomData;
 use std::collections::HashSet;
 
 use super::genome::Genome;
 
 pub trait Task {
-    fn new(seed: u64, inputs: u16, outputs: u16) -> Self;
+    fn new(seed: u64) -> Self;
     fn step(&mut self, inputs: Vec<f32>) -> Vec<f32>;
     fn score(&self) -> Option<f32>;
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct Edge {
     start: u16,
     weight: f32,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct Node {
     value: f32,
     activation: f32,
     inputs: Vec<Edge>,
 }
 
+#[derive(Debug)]
 pub struct Network {
     nodes: IndexMap<u16, Node>,
     inputs: u16,
@@ -93,12 +93,12 @@ impl Network {
             } else {
                 let n = self.nodes[&edge.start].clone();
 
+                solved.insert(edge.start);
                 let v = self.eval(n, solved);
                 let activation = self.nodes[&edge.start].activation;
                 let node_val = sigmoid(v, activation);
 
                 self.nodes[&edge.start].value = node_val;
-                solved.insert(edge.start);
                 node_val
             }
         }
@@ -122,7 +122,7 @@ impl Network {
 
     pub fn run<T: Task>(&mut self) -> f32 {
         let mut rng = rand::thread_rng();
-        let mut task = T::new(rng.gen::<u64>(), self.inputs, self.outputs);
+        let mut task = T::new(rng.gen::<u64>());
 
         while !task.score().is_some() {
             let outputs = self.get_outputs();
@@ -144,7 +144,7 @@ mod tests {
     }
 
     impl Task for Test {
-        fn new(seed: u64, inputs: u16, outputs: u16) -> Test {
+        fn new(_: u64) -> Test {
             Test { count: 0 }
         }
 

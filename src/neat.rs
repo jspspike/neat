@@ -1,12 +1,10 @@
-use std::marker::PhantomData;
-use std::cmp::Ordering;
-use rand::Rng;
 use rand::seq::SliceRandom;
+use std::marker::PhantomData;
 
 use super::genome::Genome;
-use super::network::Task;
-use super::network::Network;
 use super::innovation::InnovationCounter;
+use super::network::Network;
+use super::network::Task;
 
 pub struct NeatSettings {
     pub weight: f32,
@@ -40,7 +38,7 @@ impl NeatSettings {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct Organism {
     genome: Genome,
     fitness: Option<f32>,
@@ -56,15 +54,15 @@ impl Organism {
 }
 
 pub struct Neat<T: Task> {
+    size: usize,
     population: Vec<Organism>,
     innovations: InnovationCounter,
     settings: NeatSettings,
+    best: Organism,
     phantom: PhantomData<T>,
 }
 
-
 impl<T: Task> Neat<T> {
-
     pub fn default(size: usize, inputs: u16, outputs: u16) -> Neat<T> {
         Neat::new(size, inputs, outputs, NeatSettings::default())
     }
@@ -80,10 +78,15 @@ impl<T: Task> Neat<T> {
             population.push(Organism::new(genome));
         }
 
+        let mut best = population[0].clone();
+        best.fitness = Some(-1.0);
+
         Neat {
+            size,
             population,
             innovations,
             settings,
+            best,
             phantom: PhantomData,
         }
     }
@@ -91,11 +94,15 @@ impl<T: Task> Neat<T> {
     fn speciate(&mut self) -> Vec<Vec<Organism>> {
         let mut species: Vec<Vec<Organism>> = vec![];
 
-        for org in self.population.iter() {
+        'population: for org in self.population.iter() {
+            if org.fitness.unwrap() > self.best.fitness.unwrap() {
+                self.best = org.clone();
+            }
+
             for group in species.iter_mut() {
                 if Genome::same_species(&group[0].genome, &org.genome, &self.settings) {
                     group.push(org.clone());
-                    break;
+                    continue 'population;
                 }
             }
             species.push(vec![org.clone()]);
@@ -110,8 +117,12 @@ impl<T: Task> Neat<T> {
         self.population = vec![];
 
         for group in species.iter_mut() {
+            if group.len() <= 1 {
+                continue;
+            }
+
             group.sort_unstable_by(|a, b| b.fitness.partial_cmp(&a.fitness).unwrap());
-            group.drain(group.len()/2..);
+            group.drain(group.len() / 2..);
 
             self.population.append(group);
         }
@@ -126,10 +137,27 @@ impl<T: Task> Neat<T> {
 
     fn generate(&mut self) {
         self.population.shuffle(&mut rand::thread_rng());
-        for i in (0..self.population.len() - 1).step_by(2) {
-            let new = Genome::cross(&self.population[i].genome, &self.population[i+1].genome);
-            self.population.push(Organism::new(new));
 
+        for i in (0..self.population.len()).step_by(2) {
+            let new = Genome::cross(&self.population[i].genome, &self.population[i + 1].genome);
+            self.population.push(Organism::new(new));
         }
+
+        for i in 0..self.size - self.population.len() {
+            let mut new = self.population[i].genome.clone();
+            new.mutate(&mut self.innovations, &self.settings);
+            self.population.push(Organism::new(new));
+        }
+    }
+
+    pub fn step(&mut self) -> (Network, f32) {
+        self.execute();
+        self.kill();
+        self.generate();
+
+        (
+            Network::new(self.best.genome.clone()),
+            self.best.fitness.unwrap(),
+        )
     }
 }

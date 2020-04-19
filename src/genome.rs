@@ -5,18 +5,18 @@ use std::cmp::max;
 use super::innovation::InnovationCounter;
 use super::neat::NeatSettings;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub(crate) struct Neuron {
     pub(crate) activation: f32,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub(crate) struct Connection {
     pub(crate) weight: f32,
     pub(crate) enabled: bool,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) struct Genome {
     pub(crate) inputs: u16,
     pub(crate) outputs: u16,
@@ -43,7 +43,7 @@ impl Genome {
     }
 
     fn is_output(&self, index: usize) -> bool {
-        index >= self.inputs as usize && index < self.outputs as usize
+        index >= self.inputs as usize && index < (self.inputs + self.outputs) as usize
     }
 
     fn add_connection(
@@ -62,7 +62,7 @@ impl Genome {
         let connection = (*input_node, *output_node);
 
         if (self.is_output(input) && self.is_output(output))
-            || !self.connections.get(&connection).is_some()
+            || self.connections.contains_key(&connection)
         {
             return false;
         }
@@ -79,7 +79,11 @@ impl Genome {
         return true;
     }
 
-    fn add_node(&mut self, innovations: &InnovationCounter) {
+    fn add_node(&mut self, innovations: &mut InnovationCounter) {
+        if self.connections.len() == 0 {
+            return;
+        }
+
         let mut rng = rand::thread_rng();
 
         let (connection, info) = self
@@ -95,6 +99,7 @@ impl Genome {
         let (start, end) = *connection;
         let weight = info.weight;
 
+        innovations.add((start, innovation));
         self.connections.insert(
             (start, innovation),
             Connection {
@@ -102,10 +107,12 @@ impl Genome {
                 enabled: true,
             },
         );
+
+        innovations.add((innovation, end));
         self.connections.insert(
             (innovation, end),
             Connection {
-                weight: weight,
+                weight,
                 enabled: true,
             },
         );
@@ -142,7 +149,7 @@ impl Genome {
         }
 
         if rng.gen::<f32>() <= settings.add_node_rate {
-            self.add_node(&innovations);
+            self.add_node(innovations);
         }
 
         self.mutate_connections(&settings);
@@ -212,9 +219,16 @@ impl Genome {
             }
         });
 
-        let connection_diff = (c_diff * settings.connections_diff)
-            / max(first.connections.len(), second.connections.len()) as f32;
+        let size = max(first.connections.len(), second.connections.len());
+        let connection_diff = if size != 0 {
+            (c_diff * settings.connections_diff) / size as f32
+        } else {
+            0.0
+        };
+
         let weight_diff = w_diff * settings.weight_diff;
+
+        //dbg!(connection_diff + weight_diff);
 
         (connection_diff + weight_diff) < settings.species_threshold
     }
