@@ -46,7 +46,7 @@ impl Genome {
         index >= self.inputs as usize && index < (self.inputs + self.outputs) as usize
     }
 
-    fn add_connection(
+    pub(crate) fn add_connection(
         &mut self,
         innovations: &mut InnovationCounter,
         settings: &NeatSettings,
@@ -61,10 +61,13 @@ impl Genome {
 
         let connection = (*input_node, *output_node);
 
-        if (self.is_output(input) && self.is_output(output))
-            || self.connections.contains_key(&connection)
-        {
+        if self.is_output(input) && self.is_output(output) {
             return false;
+        }
+
+        if let Some(info) = self.connections.get_mut(&connection) {
+            info.enabled = true;
+            return true;
         }
 
         self.connections.insert(
@@ -124,7 +127,7 @@ impl Genome {
         let mut rng = rand::thread_rng();
 
         for (_, info) in self.connections.iter_mut().filter(|(_, i)| i.enabled) {
-            if rng.gen::<f32>() <= settings.weight_mutate_rate {
+            if rng.gen::<f32>() < settings.weight_mutate_rate {
                 info.weight += rng.gen_range(-settings.weight_mutate, settings.weight_mutate);
             }
         }
@@ -227,8 +230,6 @@ impl Genome {
         };
 
         let weight_diff = w_diff * settings.weight_diff;
-
-        //dbg!(connection_diff + weight_diff);
 
         (connection_diff + weight_diff) < settings.species_threshold
     }

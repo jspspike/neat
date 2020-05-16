@@ -2,12 +2,15 @@ use neat::{Neat, NeatSettings, Network, Task};
 
 struct Xor {
     count: u8,
-    score: u8,
+    score: f32,
 }
 
 impl Task for Xor {
     fn new(_: u64) -> Xor {
-        Xor { count: 0, score: 0 }
+        Xor {
+            count: 0,
+            score: 0.0,
+        }
     }
 
     fn step(&mut self, inputs: Vec<f32>) -> Vec<f32> {
@@ -16,26 +19,34 @@ impl Task for Xor {
         let output = match self.count {
             0 => vec![0.0, 0.0],
             1 => {
-                if inputs[0] as u8 == 0 {
-                    self.score += 1;
+                if inputs[0] < 0.1 {
+                    self.score += 1.0;
+                } else if inputs[0] < 1.0 {
+                    self.score += 1.0 - inputs[0];
                 }
                 vec![0.0, 1.0]
             }
             2 => {
-                if inputs[0] as u8 == 1 {
-                    self.score += 1;
+                if inputs[0] > 0.9 {
+                    self.score += 1.0;
+                } else if inputs[0] > 0.0 {
+                    self.score += inputs[0];
                 }
                 vec![1.0, 0.0]
             }
             3 => {
-                if inputs[0] as u8 == 1 {
-                    self.score += 1;
+                if inputs[0] > 0.9 {
+                    self.score += 1.0;
+                } else if inputs[0] > 0.0 {
+                    self.score += inputs[0];
                 }
                 vec![1.0, 1.0]
             }
             4 => {
-                if inputs[0] as u8 == 0 {
-                    self.score += 1;
+                if inputs[0] < 0.1 {
+                    self.score += 1.0;
+                } else if inputs[0] < 1.0 {
+                    self.score += 1.0 - inputs[0];
                 }
                 vec![0.0, 0.0]
             }
@@ -48,7 +59,7 @@ impl Task for Xor {
 
     fn score(&self) -> Option<f32> {
         if self.count > 4 {
-            Some(self.score as f32)
+            Some(self.score)
         } else {
             None
         }
@@ -56,25 +67,25 @@ impl Task for Xor {
 }
 
 fn main() {
-    let mut settings = NeatSettings::default();
-    settings.add_node_rate = 0.9;
-    settings.species_threshold = 0.6;
-    settings.weight_mutate = 2.0;
-    let mut neat = Neat::<Xor>::new(1000, 2, 1, settings);
+    let mut neat = Neat::<Xor>::default(1000, 2, 1);
 
-    let mut network = None;
-    let mut fitness = 0.0;
+    let mut best = neat.step();
 
     for _ in 0..1000 {
-        let best = neat.step();
-        network = Some(best.0);
-        fitness = best.1;
-
-        if fitness == 4.0 {
-            break;
-        }
+        best = neat.step();
     }
 
-    dbg!(network);
+    let (mut network, fitness) = best;
+
     dbg!(fitness);
+    dbg!(&network);
+
+    network.prop(vec![0.0, 0.0]);
+    dbg!(network.get_outputs());
+    network.prop(vec![1.0, 0.0]);
+    dbg!(network.get_outputs());
+    network.prop(vec![0.0, 1.0]);
+    dbg!(network.get_outputs());
+    network.prop(vec![1.0, 1.0]);
+    dbg!(network.get_outputs());
 }

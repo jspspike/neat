@@ -24,7 +24,7 @@ impl NeatSettings {
     pub fn default() -> NeatSettings {
         NeatSettings {
             weight: 1.0,
-            weight_mutate: 1.0,
+            weight_mutate: 1.5,
             weight_max: 10.0,
             weight_mutate_rate: 0.8,
             add_connection_rate: 0.2,
@@ -33,7 +33,7 @@ impl NeatSettings {
             activation_mutate_rate: 0.1,
             connections_diff: 0.5,
             weight_diff: 0.1,
-            species_threshold: 2.0,
+            species_threshold: 0.4,
         }
     }
 }
@@ -74,12 +74,13 @@ impl<T: Task> Neat<T> {
 
         for _ in 0..size {
             let mut genome = Genome::new(inputs, outputs);
+            genome.add_connection(&mut innovations, &settings);
             genome.mutate(&mut innovations, &settings);
             population.push(Organism::new(genome));
         }
 
         let mut best = population[0].clone();
-        best.fitness = Some(-1.0);
+        best.fitness = Some(f32::MIN);
 
         Neat {
             size,
@@ -113,6 +114,7 @@ impl<T: Task> Neat<T> {
 
     fn kill(&mut self) {
         let mut species = self.speciate();
+        dbg!(species.len());
 
         self.population = vec![];
 
@@ -138,7 +140,7 @@ impl<T: Task> Neat<T> {
     fn generate(&mut self) {
         self.population.shuffle(&mut rand::thread_rng());
 
-        for i in (0..self.population.len()).step_by(2) {
+        for i in (0..self.population.len() - 1).step_by(2) {
             let new = Genome::cross(&self.population[i].genome, &self.population[i + 1].genome);
             self.population.push(Organism::new(new));
         }
