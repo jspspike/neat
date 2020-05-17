@@ -56,12 +56,17 @@ impl Genome {
         let input = rng.gen_range(0, self.nodes.len());
         let output = rng.gen_range(self.inputs as usize, self.nodes.len());
 
+        if input == output || (self.is_output(input) && self.is_output(output)) {
+            return false;
+        }
+
         let (input_node, _) = self.nodes.get_index(input).unwrap();
         let (output_node, _) = self.nodes.get_index(output).unwrap();
 
         let connection = (*input_node, *output_node);
+        let reverse = (*output_node, *input_node);
 
-        if self.is_output(input) && self.is_output(output) {
+        if settings.feedforward && self.connections.contains_key(&reverse) {
             return false;
         }
 

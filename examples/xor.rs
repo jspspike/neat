@@ -1,4 +1,4 @@
-use neat::{Neat, NeatSettings, Network, Task};
+use neat::{Neat, Task};
 
 struct Xor {
     count: u8,
@@ -67,12 +67,16 @@ impl Task for Xor {
 }
 
 fn main() {
-    let mut neat = Neat::<Xor>::default(1000, 2, 1);
+    let mut neat = Neat::<Xor>::default(500, 2, 1);
 
     let mut best = neat.step();
 
-    for _ in 0..1000 {
+    for i in 0..500 {
         best = neat.step();
+        if best.1 >= 4.0 {
+            dbg!(i);
+            break;
+        }
     }
 
     let (mut network, fitness) = best;
@@ -80,11 +84,12 @@ fn main() {
     dbg!(fitness);
     dbg!(&network);
 
+    network.reset();
     network.prop(vec![0.0, 0.0]);
     dbg!(network.get_outputs());
-    network.prop(vec![1.0, 0.0]);
-    dbg!(network.get_outputs());
     network.prop(vec![0.0, 1.0]);
+    dbg!(network.get_outputs());
+    network.prop(vec![1.0, 0.0]);
     dbg!(network.get_outputs());
     network.prop(vec![1.0, 1.0]);
     dbg!(network.get_outputs());

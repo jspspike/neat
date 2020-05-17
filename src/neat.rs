@@ -18,6 +18,7 @@ pub struct NeatSettings {
     pub connections_diff: f32,
     pub weight_diff: f32,
     pub species_threshold: f32,
+    pub feedforward: bool,
 }
 
 impl NeatSettings {
@@ -27,13 +28,14 @@ impl NeatSettings {
             weight_mutate: 1.5,
             weight_max: 10.0,
             weight_mutate_rate: 0.8,
-            add_connection_rate: 0.2,
-            add_node_rate: 0.1,
+            add_connection_rate: 0.35,
+            add_node_rate: 0.15,
             activation_mutate: 0.05,
             activation_mutate_rate: 0.1,
             connections_diff: 0.5,
             weight_diff: 0.1,
-            species_threshold: 0.4,
+            species_threshold: 0.75,
+            feedforward: true,
         }
     }
 }
@@ -114,7 +116,6 @@ impl<T: Task> Neat<T> {
 
     fn kill(&mut self) {
         let mut species = self.speciate();
-        dbg!(species.len());
 
         self.population = vec![];
 

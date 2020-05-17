@@ -84,26 +84,30 @@ impl Network {
             .collect()
     }
 
+    pub fn reset(&mut self) {
+        for (_, node) in self.nodes.iter_mut() {
+            node.value = 0.0;
+        }
+    }
+
     fn eval(&mut self, node: Node, solved: &mut HashSet<u16>) -> f32 {
         let mut val = 0.0;
 
         for edge in node.inputs {
             val += if solved.contains(&edge.start) {
-                self.nodes[&edge.start].value
+                self.nodes[&edge.start].value * edge.weight
             } else {
                 let n = self.nodes[&edge.start].clone();
 
                 solved.insert(edge.start);
                 let v = self.eval(n, solved);
-                let activation = self.nodes[&edge.start].activation;
-                let node_val = sigmoid(v, activation);
 
-                self.nodes[&edge.start].value = node_val;
-                node_val
+                self.nodes[&edge.start].value = v;
+                v * edge.weight
             }
         }
 
-        val
+        sigmoid(val, node.activation)
     }
 
     pub fn prop(&mut self, inputs: Vec<f32>) {
