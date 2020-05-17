@@ -67,7 +67,7 @@ impl Task for Xor {
 }
 
 fn main() {
-    let mut neat = Neat::<Xor>::default(500, 2, 1);
+    let mut neat = Neat::<Xor>::default(1000, 2, 1);
 
     let mut best = neat.step();
 

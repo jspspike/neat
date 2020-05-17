@@ -1,4 +1,6 @@
 use rand::seq::SliceRandom;
+use rand::Rng;
+use rayon::prelude::*;
 use std::marker::PhantomData;
 
 use super::genome::Genome;
@@ -25,7 +27,7 @@ impl NeatSettings {
     pub fn default() -> NeatSettings {
         NeatSettings {
             weight: 1.0,
-            weight_mutate: 1.5,
+            weight_mutate: 2.0,
             weight_max: 10.0,
             weight_mutate_rate: 0.8,
             add_connection_rate: 0.35,
@@ -34,7 +36,7 @@ impl NeatSettings {
             activation_mutate_rate: 0.1,
             connections_diff: 0.5,
             weight_diff: 0.1,
-            species_threshold: 0.75,
+            species_threshold: 0.7,
             feedforward: true,
         }
     }
@@ -121,6 +123,10 @@ impl<T: Task> Neat<T> {
 
         for group in species.iter_mut() {
             if group.len() <= 1 {
+                let mut rng = rand::thread_rng();
+                if rng.gen::<f32>() > 0.5 {
+                    self.population.append(group)
+                }
                 continue;
             }
 
@@ -132,21 +138,28 @@ impl<T: Task> Neat<T> {
     }
 
     fn execute(&mut self) {
-        for org in self.population.iter_mut() {
+        self.population.par_iter_mut().for_each(|mut org| {
             let mut net = Network::new(org.genome.clone());
             org.fitness = Some(net.run::<T>());
-        }
+        });
     }
 
     fn generate(&mut self) {
         self.population.shuffle(&mut rand::thread_rng());
 
-        for i in (0..self.population.len() - 1).step_by(2) {
-            let new = Genome::cross(&self.population[i].genome, &self.population[i + 1].genome);
-            self.population.push(Organism::new(new));
+        let cross_cap = self.size * 3 / 4;
+        let length = self.population.len();
+
+        if cross_cap > length {
+            for i in 0..cross_cap - length {
+                let new = Genome::cross(&self.population[i].genome, &self.population[i + 1].genome);
+                self.population.push(Organism::new(new));
+            }
         }
 
-        for i in 0..self.size - self.population.len() {
+        let length = self.population.len();
+
+        for i in 0..self.size - length {
             let mut new = self.population[i].genome.clone();
             new.mutate(&mut self.innovations, &self.settings);
             self.population.push(Organism::new(new));
