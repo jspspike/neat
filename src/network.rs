@@ -156,8 +156,8 @@ mod tests {
             assert_eq!(inputs.len(), 1);
             match self.count {
                 0 => assert_eq!(inputs[0], 0.0),
-                1 => assert_eq!(inputs[0], 1.0),
-                2 => assert_eq!(inputs[0], 1.0),
+                1 => assert_eq!(inputs[0], 0.5),
+                2 => assert_eq!(inputs[0], 0.5),
                 _ => {}
             }
 

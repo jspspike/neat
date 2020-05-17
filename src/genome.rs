@@ -258,6 +258,7 @@ mod tests {
             connections_diff: 1.0,
             weight_diff: 0.1,
             species_threshold: 1.0,
+            feedforward: true,
         };
 
         let mut first = Genome::new(1, 2);
