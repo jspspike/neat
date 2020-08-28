@@ -25,7 +25,7 @@ pub(crate) struct Genome {
 }
 
 impl Genome {
-    pub fn new(inputs: u16, outputs: u16) -> Genome {
+    pub(crate) fn new(inputs: u16, outputs: u16) -> Genome {
         let mut nodes = IndexMap::new();
         for i in 0..inputs {
             nodes.insert(i, Neuron { activation: 4.9 });
@@ -84,11 +84,11 @@ impl Genome {
         );
         innovations.add(connection);
 
-        return true;
+        true
     }
 
     fn add_node(&mut self, innovations: &mut InnovationCounter) {
-        if self.connections.len() == 0 {
+        if self.connections.is_empty() {
             return;
         }
 
@@ -149,7 +149,7 @@ impl Genome {
         }
     }
 
-    pub fn mutate(&mut self, innovations: &mut InnovationCounter, settings: &NeatSettings) {
+    pub(crate) fn mutate(&mut self, innovations: &mut InnovationCounter, settings: &NeatSettings) {
         let mut rng = rand::thread_rng();
 
         if rng.gen::<f32>() <= settings.add_connection_rate {
@@ -165,7 +165,7 @@ impl Genome {
         self.mutate_nodes(&settings);
     }
 
-    pub fn cross(better: &Genome, worse: &Genome) -> Genome {
+    pub(crate) fn cross(better: &Genome, worse: &Genome) -> Genome {
         assert_eq!(better.inputs, worse.inputs);
         assert_eq!(better.outputs, worse.outputs);
 
@@ -207,7 +207,7 @@ impl Genome {
         child
     }
 
-    pub fn same_species(first: &Genome, second: &Genome, settings: &NeatSettings) -> bool {
+    pub(crate) fn same_species(first: &Genome, second: &Genome, settings: &NeatSettings) -> bool {
         let mut c_diff = 0.0;
         let mut w_diff = 0.0;
 
@@ -220,7 +220,7 @@ impl Genome {
         }
 
         c_diff += second.connections.keys().fold(0.0, |acc, conn| {
-            if !first.connections.get(conn).is_some() {
+            if first.connections.get(conn).is_none() {
                 acc + 1.0
             } else {
                 acc

@@ -2,6 +2,7 @@ use rand::seq::SliceRandom;
 use rand::Rng;
 use rayon::prelude::*;
 use std::marker::PhantomData;
+use serde::{Serialize, Deserialize};
 
 use super::genome::Genome;
 use super::innovation::InnovationCounter;
@@ -57,6 +58,7 @@ impl Organism {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Neat<T: Task> {
     size: usize,
     population: Vec<Organism>,

@@ -69,9 +69,9 @@ impl Network {
 
     fn set_inputs(&mut self, inputs: Vec<f32>) {
         assert_eq!(self.inputs, inputs.len() as u16);
-        for i in 0..self.inputs as usize {
+        for (i, value) in inputs.iter().enumerate().take(self.inputs as usize) {
             let (_, node) = self.nodes.get_index_mut(i).unwrap();
-            node.value = inputs[i];
+            node.value = *value;
         }
     }
 
@@ -128,7 +128,7 @@ impl Network {
         let mut rng = rand::thread_rng();
         let mut task = T::new(rng.gen::<u64>());
 
-        while !task.score().is_some() {
+        while task.score().is_none() {
             let outputs = self.get_outputs();
             let inputs = task.step(outputs);
             self.prop(inputs);
