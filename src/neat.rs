@@ -1,14 +1,15 @@
 use rand::seq::SliceRandom;
 use rand::Rng;
 use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
-use serde::{Serialize, Deserialize};
 
 use super::genome::Genome;
 use super::innovation::InnovationCounter;
 use super::network::Network;
 use super::network::Task;
 
+#[derive(Serialize, Deserialize)]
 pub struct NeatSettings {
     pub weight: f32,
     pub weight_mutate: f32,
@@ -43,7 +44,7 @@ impl NeatSettings {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 struct Organism {
     genome: Genome,
     fitness: Option<f32>,

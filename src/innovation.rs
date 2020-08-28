@@ -1,5 +1,7 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+#[derive(Serialize, Deserialize)]
 pub(crate) struct InnovationCounter {
     count: u16,
     connections: HashMap<(u16, u16), u16>,

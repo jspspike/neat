@@ -1,22 +1,23 @@
 use indexmap::IndexMap;
 use rand::Rng;
+use serde::{Deserialize, Serialize};
 use std::cmp::max;
 
 use super::innovation::InnovationCounter;
 use super::neat::NeatSettings;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub(crate) struct Neuron {
     pub(crate) activation: f32,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub(crate) struct Connection {
     pub(crate) weight: f32,
     pub(crate) enabled: bool,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub(crate) struct Genome {
     pub(crate) inputs: u16,
     pub(crate) outputs: u16,
