@@ -1,5 +1,6 @@
 use indexmap::IndexMap;
 use rand::Rng;
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
 use super::genome::Genome;
@@ -10,20 +11,20 @@ pub trait Task {
     fn score(&self) -> Option<f32>;
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 struct Edge {
     start: u16,
     weight: f32,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 struct Node {
     value: f32,
     activation: f32,
     inputs: Vec<Edge>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Network {
     nodes: IndexMap<u16, Node>,
     inputs: u16,
