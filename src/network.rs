@@ -5,9 +5,22 @@ use std::collections::HashSet;
 
 use super::genome::Genome;
 
+/// Task that can be executed by `Network` and train `Neat`
 pub trait Task {
+    /// Constructor to create instance of `Task`
+    ///
+    /// # Arguments
+    ///
+    /// * `seed` - Random seed to be used in Tasks that use random generators
     fn new(seed: u64) -> Self;
+    /// Function to execute step of `Task` and returns outputs
+    ///
+    /// # Arguments
+    ///
+    /// * `inputs` - Inputs for `Task`
     fn step(&mut self, inputs: Vec<f32>) -> Vec<f32>;
+    /// Returns score or fitness of `Task`. Should return `None` if `Task` is still ongoing and
+    /// should return `Some` with score when completed
     fn score(&self) -> Option<f32>;
 }
 
@@ -24,6 +37,7 @@ struct Node {
     inputs: Vec<Edge>,
 }
 
+/// Neural network used to execute tasks
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Network {
     nodes: IndexMap<u16, Node>,
@@ -76,6 +90,7 @@ impl Network {
         }
     }
 
+    /// Retrieve outputs of `Network`, should match length of inputs for `Task`
     pub fn get_outputs(&self) -> Vec<f32> {
         self.nodes
             .values()
@@ -85,6 +100,7 @@ impl Network {
             .collect()
     }
 
+    /// Reset all node values to 0.0
     pub fn reset(&mut self) {
         for (_, node) in self.nodes.iter_mut() {
             node.value = 0.0;
@@ -111,6 +127,11 @@ impl Network {
         sigmoid(val, node.activation)
     }
 
+    /// Propagate inputs throughout network
+    ///
+    /// # Arguments
+    ///
+    /// * `inputs` - Input values for network
     pub fn prop(&mut self, inputs: Vec<f32>) {
         self.set_inputs(inputs);
 
@@ -125,6 +146,7 @@ impl Network {
         }
     }
 
+    /// Run given `Task` to completion using network. This will take `Network` outputs and use them as inputs in `Task` `step`. Then run `prop` using `Task` outputs. Once `Task` `score` returns `Some`, execution will be stopped and the score from `Task` will be returned.
     pub fn run<T: Task>(&mut self) -> f32 {
         let mut rng = rand::thread_rng();
         let mut task = T::new(rng.gen::<u64>());

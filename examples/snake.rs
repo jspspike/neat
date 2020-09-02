@@ -11,6 +11,7 @@ struct SnakeTask {
 
 impl Task for SnakeTask {
     fn new(_: u64) -> SnakeTask {
+        // Create new Task and do all initialization
         SnakeTask {
             game: Snake::new(0, 10),
             score: 0.0,
@@ -20,10 +21,12 @@ impl Task for SnakeTask {
     }
 
     fn step(&mut self, inputs: Vec<f32>) -> Vec<f32> {
+        // Make sure inputs length matches Network outputs length
         assert_eq!(inputs.len(), 1);
 
         let length = self.game.length();
 
+        // Determine snake direction from input
         self.running = self.game.turn(match inputs[0] {
             v if v < 0.25 => Direction::Left,
             v if v < 0.5 => Direction::Up,
@@ -31,12 +34,15 @@ impl Task for SnakeTask {
             _ => Direction::Right,
         });
 
+        // Check if the length hasn't changed (ie. the snake ate food this turn)
         if length != self.game.length() {
             assert_eq!(length, self.game.length() - 1);
             self.repeat = 0;
+            // If food eaten update score to reflect that
             self.score = self.game.length() as f32;
         }
 
+        // Update repeat and exit out at 100 to prevent infinte loop
         self.repeat += 1;
         if self.repeat == 100 {
             self.running = false;
@@ -44,6 +50,7 @@ impl Task for SnakeTask {
 
         self.score += 0.0001;
 
+        // Get output and return it
         let mut outputs = self.game.walls();
         outputs.append(&mut self.game.snake());
         outputs.append(&mut self.game.food());
@@ -52,6 +59,7 @@ impl Task for SnakeTask {
     }
 
     fn score(&self) -> Option<f32> {
+        // Return Some(score) when task is finished
         match self.running {
             true => None,
             false => Some(self.score),
@@ -72,12 +80,13 @@ fn main() {
         Ok(neat) => neat,
         _ => {
             let mut settings = NeatSettings::default();
-            settings.weight_mutate = 4.0;
-            settings.species_threshold = 1.4;
+            settings.weight_mutate = 3.7;
+            settings.species_threshold = 1.45;
             settings.add_connection_rate = 0.44;
             settings.reset_fitness = false;
-            settings.connections_diff = 1.05;
+            settings.connections_diff = 1.0;
 
+            // Create Neat using Task implemented above
             Neat::<SnakeTask>::new(3000, 24, 1, settings)
         }
     };
@@ -101,6 +110,8 @@ fn main() {
             fs::write("examples/snake.network", &network_bytes).unwrap();
             dbg!("Wrote to files");
         }
+
+        // Run step of Neat returning tuple of network and fitness of most fit genome
         best = neat.step();
     }
 
