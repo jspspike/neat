@@ -23,6 +23,7 @@ pub struct NeatSettings {
     pub weight_diff: f32,
     pub species_threshold: f32,
     pub feedforward: bool,
+    pub reset_fitness: bool,
 }
 
 impl NeatSettings {
@@ -40,6 +41,7 @@ impl NeatSettings {
             weight_diff: 0.1,
             species_threshold: 0.7,
             feedforward: true,
+            reset_fitness: false,
         }
     }
 }
@@ -63,13 +65,14 @@ impl Organism {
 pub struct Neat<T: Task> {
     size: usize,
     population: Vec<Organism>,
+    species_count: usize,
     innovations: InnovationCounter,
     settings: NeatSettings,
     best: Organism,
     phantom: PhantomData<T>,
 }
 
-impl<T: Task> Neat<T> {
+impl<T: Task + std::marker::Sync> Neat<T> {
     pub fn default(size: usize, inputs: u16, outputs: u16) -> Neat<T> {
         Neat::new(size, inputs, outputs, NeatSettings::default())
     }
@@ -92,6 +95,7 @@ impl<T: Task> Neat<T> {
         Neat {
             size,
             population,
+            species_count: 0,
             innovations,
             settings,
             best,
@@ -101,6 +105,11 @@ impl<T: Task> Neat<T> {
 
     fn speciate(&mut self) -> Vec<Vec<Organism>> {
         let mut species: Vec<Vec<Organism>> = vec![];
+
+        if self.settings.reset_fitness {
+            let fitness = Network::new(self.best.genome.clone()).run::<T>();
+            self.best.fitness = Some(fitness);
+        }
 
         'population: for org in self.population.iter() {
             if org.fitness.unwrap() > self.best.fitness.unwrap() {
@@ -116,6 +125,8 @@ impl<T: Task> Neat<T> {
             species.push(vec![org.clone()]);
         }
 
+        self.species_count = species.len();
+
         species
     }
 
@@ -125,7 +136,7 @@ impl<T: Task> Neat<T> {
         self.population = vec![];
 
         for group in species.iter_mut() {
-            if group.len() <= 1 {
+            if group.len() == 1 {
                 let mut rng = rand::thread_rng();
                 if rng.gen::<f32>() > 0.5 {
                     self.population.append(group)
@@ -141,10 +152,14 @@ impl<T: Task> Neat<T> {
     }
 
     fn execute(&mut self) {
-        self.population.par_iter_mut().for_each(|mut org| {
-            let mut net = Network::new(org.genome.clone());
-            org.fitness = Some(net.run::<T>());
-        });
+        let reset_fitness = self.settings.reset_fitness;
+        self.population
+            .par_iter_mut()
+            .filter(|org| org.fitness.is_none() || reset_fitness)
+            .for_each(|mut org| {
+                let mut net = Network::new(org.genome.clone());
+                org.fitness = Some(net.run::<T>());
+            });
     }
 
     fn generate(&mut self) {
@@ -178,5 +193,9 @@ impl<T: Task> Neat<T> {
             Network::new(self.best.genome.clone()),
             self.best.fitness.unwrap(),
         )
+    }
+
+    pub fn species(&self) -> usize {
+        self.species_count
     }
 }

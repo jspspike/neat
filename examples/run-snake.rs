@@ -11,9 +11,10 @@ fn load_network() -> Result<Network, bincode::Error> {
 
 fn main() {
     let window = RenderWindow::new((1000, 1000), "Snake", Style::CLOSE, &Default::default());
-    let mut game = Snake::new_display(2, 10, Some(window));
+    let mut game = Snake::new_display(0, 10, Some(window));
 
     let mut network = load_network().unwrap();
+    network.reset();
 
     let mut direction = Direction::Center;
 
@@ -27,6 +28,7 @@ fn main() {
         let output = network.get_outputs();
         assert_eq!(output.len(), 1);
 
+        println!("Network Output: {}", output[0]);
         thread::sleep(time::Duration::from_millis(100));
 
         direction = match output[0] {

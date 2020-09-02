@@ -260,6 +260,7 @@ mod tests {
             weight_diff: 0.1,
             species_threshold: 1.0,
             feedforward: true,
+            reset_fitness: false,
         };
 
         let mut first = Genome::new(1, 2);
